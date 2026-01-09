@@ -1,0 +1,7 @@
+correct=B
+detail=git checkout -b creates and checks out a new branch in one step.
+prompt=In Git, which command creates a new branch and switches to it?
+A=git init
+B=git checkout -b <name>
+C=git merge <name>
+D=git log

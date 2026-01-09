@@ -1,0 +1,7 @@
+correct=C
+detail=HTTPS defaults to port 443.
+prompt=Which port is the default for HTTPS?
+A=21
+B=80
+C=443
+D=8080

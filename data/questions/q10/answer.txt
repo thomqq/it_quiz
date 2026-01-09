@@ -1,0 +1,7 @@
+correct=B
+detail=SSH provides encrypted remote shell access.
+prompt=Which protocol is commonly used to securely connect to a remote shell?
+A=FTP
+B=SSH
+C=Telnet
+D=HTTP

@@ -1,0 +1,7 @@
+correct=B
+detail=pwd prints the absolute path of the current directory.
+prompt=Which command shows the current working directory in a Unix shell?
+A=ls
+B=pwd
+C=cd
+D=whoami

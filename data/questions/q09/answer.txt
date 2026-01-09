@@ -1,0 +1,7 @@
+correct=A
+detail=Python source modules use the .py extension.
+prompt=In Python, what is the correct file extension for a module?
+A=.py
+B=.pym
+C=.python
+D=.pt

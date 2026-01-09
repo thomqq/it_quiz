@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>IT Quiz</title>
+    <style>
+      body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 2rem; }
+      .card { max-width: 720px; padding: 1.25rem 1.5rem; border: 1px solid #ddd; border-radius: 12px; }
+      .question { font-size: 1.1rem; margin: 0 0 1rem; }
+      .choices { display: flex; gap: .75rem; flex-wrap: wrap; margin-top: .75rem; }
+      .choice { width: 56px; height: 56px; border-radius: 14px; border: 1px solid #111; background: #111; color: #fff; cursor: pointer; font-size: 1.25rem; font-weight: 700; line-height: 1; }
+      .choice:hover { opacity: .9; }
+      .choice:focus { outline: 3px solid rgba(0, 0, 0, .25); outline-offset: 2px; }
+      .hint { color: #555; margin-top: .75rem; font-size: .95rem; }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h1>IT Quiz</h1>
+      {% if slug %}
+        <p class="question"><strong>Question:</strong> {{ slug }}</p>
+      {% endif %}
+
+      {% if image_url %}
+        <img src="{{ image_url }}" alt="Quiz question" style="max-width: 100%; border: 1px solid #eee; border-radius: 10px; margin: 0 0 1rem;" />
+      {% endif %}
+
+      <form method="post" action="/quiz">
+        <input type="hidden" name="slug" value="{{ slug }}" />
+        <div class="choices">
+          <button class="choice" type="submit" name="answer" value="A" aria-label="Choose A">A</button>
+          <button class="choice" type="submit" name="answer" value="B" aria-label="Choose B">B</button>
+          <button class="choice" type="submit" name="answer" value="C" aria-label="Choose C">C</button>
+          <button class="choice" type="submit" name="answer" value="D" aria-label="Choose D">D</button>
+        </div>
+      </form>
+
+      <div class="hint">Click A, B, C, or D.</div>
+    </div>
+  </body>
+</html>

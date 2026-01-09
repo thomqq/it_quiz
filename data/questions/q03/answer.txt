@@ -1,0 +1,7 @@
+correct=A
+detail=DNS resolves domain names (like example.com) to IP addresses.
+prompt=What does DNS translate?
+A=Domain names to IP addresses
+B=IP addresses to MAC addresses
+C=Passwords to hashes
+D=Files to folders

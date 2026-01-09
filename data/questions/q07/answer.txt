@@ -1,0 +1,7 @@
+correct=A
+detail=RAM is Random Access Memory (volatile working memory).
+prompt=What does RAM stand for?
+A=Random Access Memory
+B=Read Access Machine
+C=Rapid Application Module
+D=Remote Access Memory

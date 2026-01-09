@@ -1,0 +1,7 @@
+correct=C
+detail=WHERE filters rows based on conditions.
+prompt=Which SQL clause filters rows?
+A=ORDER BY
+B=GROUP BY
+C=WHERE
+D=LIMIT

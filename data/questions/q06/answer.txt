@@ -1,0 +1,7 @@
+correct=B
+detail=A password manager helps generate/store unique strong passwords.
+prompt=Which of these is a strong password practice?
+A=Reusing the same password
+B=Using a password manager
+C=Sharing passwords by email
+D=Using only lowercase

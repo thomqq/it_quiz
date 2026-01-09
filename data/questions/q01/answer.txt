@@ -1,0 +1,7 @@
+correct=B
+detail=GET is designed for retrieving resources without side effects.
+prompt=Which HTTP method is typically used to retrieve data?
+A=POST
+B=GET
+C=DELETE
+D=PATCH

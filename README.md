@@ -1,6 +1,6 @@
 # it_quiz
 
-Minimal Flask "Hello, World!" app.
+Minimal Flask "Hello, World!" app + simple quiz page.
 
 ## Run locally
 
@@ -24,4 +24,7 @@ python app.py
 ```
 
 Open http://127.0.0.1:5000
-# it_quiz
+
+## Quiz page
+
+Open http://127.0.0.1:5000/quiz
