@@ -3,16 +3,19 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-from flask import Flask, jsonify, redirect, render_template, request, send_from_directory, url_for
+from flask import Flask, flash, jsonify, redirect, render_template, request, send_from_directory, session, url_for
 
 from quiz_repository import QuizRepository
+from quiz_service import QuizProgressService
 
 app = Flask(__name__)
+app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "dev")
 
 
 BASE_DIR = Path(__file__).resolve().parent
 QUESTIONS_DIR = BASE_DIR / "data" / "questions"
 repo = QuizRepository(QUESTIONS_DIR)
+progress = QuizProgressService(repo)
 
 
 @app.get("/")
@@ -23,7 +26,10 @@ def hello_world():
 @app.get("/data/questions/<path:filename>")
 def questions_asset(filename: str):
     # Serves PNG files from data/questions/... (no secrets should be stored there)
-    return send_from_directory(repo.questions_dir, filename)
+    resp = send_from_directory(repo.questions_dir, filename)
+    # Avoid confusing browser caching when moving between questions quickly.
+    resp.headers["Cache-Control"] = "no-store"
+    return resp
 
 
 @app.get("/api/questions")
@@ -61,9 +67,17 @@ def quiz_page():
             500,
         )
 
-    slug = request.args.get("q") or slugs[0]
-    if slug not in slugs:
-        slug = slugs[0]
+    requested_slug = request.args.get("q")
+    if requested_slug:
+        slug = progress.set_current_slug(session, requested_slug)
+    else:
+        slug = progress.get_or_init_current_slug(session)
+
+    if not slug:
+        return (
+            "No questions found. Generate them with: python scripts/generate_questions.py",
+            500,
+        )
 
     q = repo.get_question(slug)
     if not q:
@@ -72,7 +86,16 @@ def quiz_page():
             500,
         )
 
-    image_url = url_for("questions_asset", filename=f"{slug}/question.png")
+    try:
+        cache_bust = q.image_path.stat().st_mtime_ns
+    except OSError:
+        cache_bust = 0
+
+    image_url = url_for(
+        "questions_asset",
+        filename=f"{slug}/question.png",
+        v=cache_bust,
+    )
     return render_template(
         "quiz.html",
         slug=slug,
@@ -85,33 +108,27 @@ def quiz_page():
 def quiz_submit():
     selected = request.form.get("answer")
     if selected not in {"A", "B", "C", "D"}:
-        return redirect(url_for("quiz_page"))
+        return redirect(url_for("quiz_page"), code=303)
 
-    slug = request.form.get("slug")
-    if not slug:
-        return redirect(url_for("quiz_page"))
+    slug_from_form = request.form.get("slug")
+    current_slug = progress.get_or_init_current_slug(session)
+    if not current_slug:
+        return redirect(url_for("quiz_page"), code=303)
 
-    q = repo.get_question(slug)
-    if not q:
-        return redirect(url_for("quiz_page"))
+    if slug_from_form and slug_from_form != current_slug:
+        flash("Question changed. Please answer the current question.")
+        return redirect(url_for("quiz_page", q=current_slug), code=303)
 
-    correct = q.correct
-    detail = q.detail
+    result = progress.submit(session, current_slug, selected)
+    if not result:
+        return redirect(url_for("quiz_page"), code=303)
 
-    slugs = repo.list_slugs()
-    next_slug = None
-    if slug in slugs:
-        idx = slugs.index(slug)
-        next_slug = slugs[(idx + 1) % len(slugs)]
+    if result.is_correct:
+        flash("Correct. Moving to the next question.")
+        return redirect(url_for("quiz_page", q=result.next_slug), code=303)
 
-    return render_template(
-        "result.html",
-        selected=selected,
-        correct=correct,
-        is_correct=(selected == correct),
-        detail=detail,
-        next_url=url_for("quiz_page", q=next_slug) if next_slug else url_for("quiz_page"),
-    )
+    flash(f"Incorrect. Correct answer is {result.correct}. {result.detail}")
+    return redirect(url_for("quiz_page", q=current_slug), code=303)
 
 
 if __name__ == "__main__":

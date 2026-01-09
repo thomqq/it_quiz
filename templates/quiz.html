@@ -18,6 +18,17 @@
   <body>
     <div class="card">
       <h1>IT Quiz</h1>
+
+      {% with messages = get_flashed_messages() %}
+        {% if messages %}
+          <div style="margin: .75rem 0 1rem; padding: .75rem 1rem; border: 1px solid #ddd; border-radius: 10px; background: #fafafa;">
+            {% for message in messages %}
+              <div>{{ message }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
       {% if slug %}
         <p class="question"><strong>Question:</strong> {{ slug }}</p>
       {% endif %}
