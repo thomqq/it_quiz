@@ -26,6 +26,10 @@
         <img src="{{ image_url }}" alt="Quiz question" style="max-width: 100%; border: 1px solid #eee; border-radius: 10px; margin: 0 0 1rem;" />
       {% endif %}
 
+      {% if prompt %}
+        <p class="question"><strong>{{ prompt }}</strong></p>
+      {% endif %}
+
       <form method="post" action="/quiz">
         <input type="hidden" name="slug" value="{{ slug }}" />
         <div class="choices">

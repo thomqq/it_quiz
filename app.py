@@ -3,34 +3,16 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-from flask import Flask, redirect, render_template, request, send_from_directory, url_for
+from flask import Flask, jsonify, redirect, render_template, request, send_from_directory, url_for
+
+from quiz_repository import QuizRepository
 
 app = Flask(__name__)
 
 
 BASE_DIR = Path(__file__).resolve().parent
-DATA_DIR = BASE_DIR / "data" / "questions"
-
-
-def _list_question_slugs() -> list[str]:
-    if not DATA_DIR.exists():
-        return []
-    return sorted([p.name for p in DATA_DIR.iterdir() if p.is_dir()])
-
-
-def _load_answer_file(slug: str) -> dict[str, str] | None:
-    answer_path = DATA_DIR / slug / "answer.txt"
-    if not answer_path.exists():
-        return None
-
-    data: dict[str, str] = {}
-    for raw_line in answer_path.read_text(encoding="utf-8").splitlines():
-        line = raw_line.strip()
-        if not line or line.startswith("#") or "=" not in line:
-            continue
-        key, value = line.split("=", 1)
-        data[key.strip()] = value.strip()
-    return data
+QUESTIONS_DIR = BASE_DIR / "data" / "questions"
+repo = QuizRepository(QUESTIONS_DIR)
 
 
 @app.get("/")
@@ -41,12 +23,38 @@ def hello_world():
 @app.get("/data/questions/<path:filename>")
 def questions_asset(filename: str):
     # Serves PNG files from data/questions/... (no secrets should be stored there)
-    return send_from_directory(DATA_DIR, filename)
+    return send_from_directory(repo.questions_dir, filename)
+
+
+@app.get("/api/questions")
+def api_questions_list():
+    return jsonify({"questions": repo.list_slugs()})
+
+
+@app.get("/api/questions/<slug>")
+def api_question(slug: str):
+    q = repo.get_question(slug)
+    if not q:
+        return jsonify({"error": "not_found"}), 404
+
+    include_image = request.args.get("include_image") in {"1", "true", "yes"}
+    payload = {
+        "slug": q.slug,
+        "prompt": q.prompt,
+        "options": q.options,
+        # Do not expose the correct answer by default.
+        "image_url": url_for("questions_asset", filename=f"{slug}/question.png", _external=True),
+    }
+
+    if include_image:
+        payload["image_data_url"] = repo.get_image_data_url(slug)
+
+    return jsonify(payload)
 
 
 @app.get("/quiz")
 def quiz_page():
-    slugs = _list_question_slugs()
+    slugs = repo.list_slugs()
     if not slugs:
         return (
             "No questions found. Generate them with: python scripts/generate_questions.py",
@@ -57,14 +65,19 @@ def quiz_page():
     if slug not in slugs:
         slug = slugs[0]
 
-    meta = _load_answer_file(slug) or {}
+    q = repo.get_question(slug)
+    if not q:
+        return (
+            f"Question '{slug}' is missing required files. Re-generate with: python scripts/generate_questions.py",
+            500,
+        )
 
     image_url = url_for("questions_asset", filename=f"{slug}/question.png")
     return render_template(
         "quiz.html",
         slug=slug,
         image_url=image_url,
-        prompt=meta.get("prompt", ""),
+        prompt=q.prompt,
     )
 
 
@@ -78,14 +91,14 @@ def quiz_submit():
     if not slug:
         return redirect(url_for("quiz_page"))
 
-    meta = _load_answer_file(slug)
-    if not meta or meta.get("correct") not in {"A", "B", "C", "D"}:
+    q = repo.get_question(slug)
+    if not q:
         return redirect(url_for("quiz_page"))
 
-    correct = meta["correct"]
-    detail = meta.get("detail", "")
+    correct = q.correct
+    detail = q.detail
 
-    slugs = _list_question_slugs()
+    slugs = repo.list_slugs()
     next_slug = None
     if slug in slugs:
         idx = slugs.index(slug)
